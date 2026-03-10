@@ -43,6 +43,11 @@ with tab1:
             ten_hs = df.at[idx, 'HoTen']
             now = datetime.now().strftime("%H:%M %d/%m")
 
+            # CHỖ SỬA QUAN TRỌNG: Ép kiểu dữ liệu cột thành Object (Chuỗi) trước khi gán
+            df['TrangThai'] = df['TrangThai'].astype(str)
+            df['GioCat'] = df['GioCat'].astype(str)
+            df['GioTra'] = df['GioTra'].astype(str)
+
             if che_do == "Thu máy (Cất)":
                 df.at[idx, 'TrangThai'] = "✅ Đã cất"
                 df.at[idx, 'GioCat'] = now
@@ -52,6 +57,8 @@ with tab1:
                 df.at[idx, 'GioTra'] = now
                 st.info(f"Đã trả máy cho: {ten_hs}")
             
+            # Xóa các giá trị 'nan' (trống) trông cho đẹp
+            df = df.replace('nan', '')
             df.to_excel(FILE_LOP, index=False)
         else:
             st.error("Không tìm thấy học sinh này!")
@@ -68,6 +75,7 @@ with tab2:
         df_hien_thi['GioTra'] = ""
         df_hien_thi.to_excel(FILE_LOP, index=False)
         st.rerun()
+
 
 
 
