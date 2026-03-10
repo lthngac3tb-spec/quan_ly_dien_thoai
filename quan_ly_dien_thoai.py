@@ -66,6 +66,17 @@ with tab1:
 with tab2:
     st.subheader("Tình trạng hiện tại")
     df_hien_thi = pd.read_excel(FILE_LOP)
+    # --- PHẦN THỐNG KÊ NHANH ---
+    col1, col2, col3 = st.columns(3)
+    tong_so = len(df_hien_thi)
+    da_cat = len(df_hien_thi[df_hien_thi['TrangThai'] == "✅ Đã cất"])
+    chua_cat = tong_so - da_cat - len(df_hien_thi[df_hien_thi['TrangThai'] == "🏠 Đã trả"])
+
+    col1.metric("Tổng sĩ số", f"{tong_so} HS")
+    col2.metric("Đã cất máy", f"{da_cat} máy", delta=f"{da_cat}/{tong_so}", delta_color="normal")
+    col3.metric("Chưa cất", f"{chua_cat} bạn", delta=f"-{chua_cat}", delta_color="inverse")
+    st.divider()
+    # ---------------------------
     st.dataframe(df_hien_thi, use_container_width=True)
     
     # Nút reset ngày mới
@@ -75,6 +86,7 @@ with tab2:
         df_hien_thi['GioTra'] = ""
         df_hien_thi.to_excel(FILE_LOP, index=False)
         st.rerun()
+
 
 
 
