@@ -7,7 +7,7 @@ import os
 FILE_LOP = "danh_sach_lop.xlsx"
 
 # Tạo file mẫu nếu chưa có
-if not os.path.exists(FILE_LOP):
+if not os.path.exists(danh_sach_lop.xlsx):
     df_mau = pd.DataFrame({
         "STT": ["01", "02", "03"],
         "HoTen": ["Nguyễn Văn A", "Trần Thị B", "Lê Văn C"],
@@ -66,3 +66,4 @@ with tab2:
         df_hien_thi['GioTra'] = ""
         df_hien_thi.to_excel(FILE_LOP, index=False)
         st.rerun()
+
