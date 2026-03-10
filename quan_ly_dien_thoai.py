@@ -12,14 +12,17 @@ st.set_page_config(page_title="Quản lý Điện thoại", page_icon="📱")
 st.title("📱 QUẢN LÝ ĐIỆN THOẠI")
 
 # Đọc dữ liệu
+# --- ĐOẠN CODE "LỌC" DỮ LIỆU CỰC MẠNH ---
 if os.path.exists(FILE_LOP):
     df = pd.read_excel(FILE_LOP)
-    # Đảm bảo các cột là chuỗi (string) để không bị lỗi TypeError
-    for col in ['STT', 'TrangThai', 'GioCat', 'GioTra']:
+    
+    # Ép tất cả STT về dạng chuỗi 2 chữ số (VD: 1 -> "01", 01 -> "01")
+    # Điều này giúp sửa lỗi khi Excel tự ý đổi 01 thành 1
+    df['STT'] = df['STT'].astype(str).apply(lambda x: x.split('.')[0].zfill(2))
+    
+    # Ép các cột khác về dạng chuỗi để tránh lỗi TypeError lúc nãy
+    for col in ['TrangThai', 'GioCat', 'GioTra']:
         df[col] = df[col].astype(str).replace('nan', '')
-else:
-    st.error("Không tìm thấy file danh_sach_lop.xlsx! Hãy kiểm tra trên GitHub.")
-    st.stop()
 
 tab1, tab2 = st.tabs(["📸 Trạm Quét", "📊 Danh sách"])
 
@@ -59,3 +62,4 @@ with tab2:
         df['GioTra'] = ""
         df.to_excel(FILE_LOP, index=False)
         st.rerun()
+
