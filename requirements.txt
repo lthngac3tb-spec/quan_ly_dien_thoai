@@ -1,4 +1,3 @@
 pandas
 openpyxl
 pytz
-streamlit-qr-reader
