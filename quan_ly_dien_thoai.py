@@ -33,14 +33,18 @@ if df is not None:
     tab1, tab2 = st.tabs(["📸 Trạm Quét", "📊 Danh sách & Báo cáo"])
 
     # --- TAB 1: XỬ LÝ THU / TRẢ MÁY ---
+   # --- TAB 1: XỬ LÝ THU / TRẢ MÁY ---
     with tab1:
         st.subheader("📸 Thu hoặc Trả máy")
         che_do = st.radio("Chế độ:", ["Thu máy (Cất)", "Trả máy (Lấy về)"], horizontal=True)
         
-        # Nhập mã số
-        ma_quet = st.text_input("Nhập STT (Ví dụ: 01, 05) hoặc dùng camera bàn phím:", key="qr_input")
+        # SỬA Ở ĐÂY: Dùng form để tự động xóa dữ liệu sau khi nhấn Enter
+        with st.form(key='form_quet_ma', clear_on_submit=True):
+            ma_quet = st.text_input("Nhập STT (Ví dụ: 01, 05) rồi nhấn Enter:")
+            submit_button = st.form_submit_button(label='Xác nhận')
         
-        if ma_quet:
+        # Xử lý dữ liệu khi người dùng nhấn Enter (Submit form)
+        if submit_button and ma_quet:
             stt_nhan = ma_quet.strip().zfill(2)
             if stt_nhan in df['STT'].values:
                 idx = df.index[df['STT'] == stt_nhan][0]
@@ -102,3 +106,4 @@ if df is not None:
             df.to_excel(FILE_LOP, index=False)
             st.warning("Đã reset dữ liệu. Hãy F5 lại app.")
             st.rerun()
+
