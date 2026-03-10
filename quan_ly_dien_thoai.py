@@ -3,7 +3,7 @@ import pandas as pd
 from datetime import datetime
 import pytz
 import os
-
+import io
 # --- CẤU HÌNH ---
 FILE_LOP = "danh_sach_lop.xlsx"
 mui_gio_vn = pytz.timezone('Asia/Ho_Chi_Minh')
@@ -63,6 +63,31 @@ with tab2:
         df.to_excel(FILE_LOP, index=False)
         st.rerun()
     # --- PHẦN XUẤT FILE EXCEL THEO NGÀY ---
+    # --- PHẦN XUẤT FILE EXCEL AN TOÀN ---
+    st.divider()
+    st.subheader("📥 Xuất Báo Cáo")
+    
+    try:
+        # 1. Chuẩn bị tên file
+        ngay_ghi = datetime.now(mui_gio_vn).strftime("%d_%m_%Y")
+        ten_file = f"Bao_Cao_Dien_Thoai_{ngay_ghi}.xlsx"
+
+        # 2. Tạo dữ liệu Excel
+        to_download = io.BytesIO()
+        with pd.ExcelWriter(to_download, engine='openpyxl') as writer:
+            df.to_excel(writer, index=False, sheet_name='Lop_Hoc')
+        
+        # 3. Hiển thị nút tải
+        st.download_button(
+            label="💾 Bấm để tải File Excel báo cáo",
+            data=to_download.getvalue(),
+            file_name=ten_file,
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+        st.info("💡 Mẹo: Hãy tải báo cáo trước khi bấm 'Làm mới ngày mới'.")
+        
+    except Exception as e:
+        st.error(f"Có lỗi khi tạo file: {e}")
     st.divider()
     st.subheader("📥 Xuất Báo Cáo")
     
@@ -71,7 +96,7 @@ with tab2:
     ten_file_xuat = f"Bao_Cao_Dien_Thoai_{ngay_hien_tai}.xlsx"
 
     # Tạo dữ liệu Excel để tải về (dùng thư viện io để tạo file tạm trong bộ nhớ)
-    import io
+    
     buffer = io.BytesIO()
     with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
         df_hien_thi.to_excel(writer, index=False, sheet_name='BaoCao')
@@ -83,4 +108,5 @@ with tab2:
         file_name=ten_file_xuat,
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
+
 
