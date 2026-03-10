@@ -31,7 +31,46 @@ with tab1:
     
     # Ở đây chúng ta sẽ dùng một ô nhập text giả lập máy quét 
     # (Vì hầu hết máy quét QR cầm tay hoặc Camera đều trả về text)
-    ma_quet = st.text_input("Đưa camera vào mã QR (hoặc nhập STT):")
+   from streamlit_qr_reader import st_qr_reader # Thêm dòng này ở đầu file
+
+with tab1:
+    st.subheader("📸 Quét Mã QR")
+    che_do = st.radio("Chọn chế độ:", ["Thu máy (Cất)", "Trả máy (Lấy về)"], horizontal=True)
+    
+    # --- KHUNG CAMERA QUÉT QR ---
+    st.write("Đưa mã QR vào khung hình bên dưới:")
+    qr_data = st_qr_reader(key='qrcode') # Tự động mở camera
+    
+    if qr_data:
+        ma_quet = qr_data.strip().zfill(2) # Lấy dữ liệu từ mã QR
+        
+        df = pd.read_excel(FILE_LOP)
+        df['STT'] = df['STT'].astype(str).str.zfill(2)
+        
+        if ma_quet in df['STT'].values:
+            idx = df.index[df['STT'] == ma_quet][0]
+            ten_hs = df.at[idx, 'HoTen']
+            
+            # Ép kiểu để tránh lỗi như lúc nãy
+            df['TrangThai'] = df['TrangThai'].astype(str)
+            df['GioCat'] = df['GioCat'].astype(str)
+            df['GioTra'] = df['GioTra'].astype(str)
+            
+            mui_gio_vn = pytz.timezone('Asia/Ho_Chi_Minh')
+            now = datetime.now(mui_gio_vn).strftime("%H:%M %d/%m")
+
+            if che_do == "Thu máy (Cất)":
+                df.at[idx, 'TrangThai'] = "✅ Đã cất"
+                df.at[idx, 'GioCat'] = now
+                st.success(f"Đã thu máy của: {ten_hs}")
+            else:
+                df.at[idx, 'TrangThai'] = "🏠 Đã trả"
+                df.at[idx, 'GioTra'] = now
+                st.info(f"Đã trả máy cho: {ten_hs}")
+            
+            df = df.replace('nan', '')
+            df.to_excel(FILE_LOP, index=False)
+            st.balloons() # Bắn pháo hoa cho phấn khởi
     
     if ma_quet:
         df = pd.read_excel(FILE_LOP)
@@ -90,6 +129,7 @@ with tab2:
         df_hien_thi['GioTra'] = ""
         df_hien_thi.to_excel(FILE_LOP, index=False)
         st.rerun()
+
 
 
 
