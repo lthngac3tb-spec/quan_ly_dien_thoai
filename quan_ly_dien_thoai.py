@@ -80,7 +80,7 @@ if df is not None:
         st.dataframe(df, use_container_width=True)
 
         # PHẦN XUẤT FILE EXCEL
-     # --- PHẦN XUẤT FILE EXCEL AN TOÀN & ĐẸP ---
+    # --- PHẦN XUẤT FILE EXCEL AN TOÀN & ĐẸP (VÁ LỖI FLOAT) ---
         st.write("---")
         try:
             from openpyxl.styles import Alignment, Border, Side, Font, PatternFill
@@ -90,7 +90,6 @@ if df is not None:
             ngay_hien_tai = datetime.now(mui_gio_vn).strftime("%d_%m_%Y")
             buffer = io.BytesIO()
             
-            # Tạo một Workbook mới từ openpyxl thay vì dùng trực tiếp qua pandas
             wb = Workbook()
             ws = wb.active
             ws.title = "BaoCao"
@@ -103,7 +102,7 @@ if df is not None:
             for r in df.values.tolist():
                 ws.append(r)
 
-            # 3. Định dạng Header (Màu nền xanh, chữ in đậm, căn giữa)
+            # 3. Định dạng Header
             header_fill = PatternFill(start_color="B8CCE4", end_color="B8CCE4", fill_type="solid")
             header_font = Font(bold=True)
             thin_border = Border(left=Side(style='thin'), right=Side(style='thin'), 
@@ -116,23 +115,29 @@ if df is not None:
                 cell.alignment = Alignment(horizontal='center', vertical='center')
                 cell.border = thin_border
 
-            # 4. Định dạng hàng dữ liệu (Kẻ bảng, căn lề)
+            # 4. Định dạng hàng dữ liệu
             for row in ws.iter_rows(min_row=2, max_row=ws.max_row, min_col=1, max_col=len(headers)):
                 for cell in row:
                     cell.border = thin_border
-                    # Cột 2 (Họ Tên) căn trái, các cột khác căn giữa
                     if cell.column != 2:
                         cell.alignment = Alignment(horizontal='center', vertical='center')
                     else:
                         cell.alignment = Alignment(horizontal='left', vertical='center')
 
-            # 5. Tự động chỉnh độ rộng cột
+            # 5. Tự động chỉnh độ rộng cột (ĐÃ SỬA LỖI FLOAT)
             for i, col in enumerate(headers):
-                # Tính toán độ dài tối đa của nội dung trong cột
-                max_length = max(df[col].astype(str).map(len).max(), len(col)) + 4
-                ws.column_dimensions[get_column_letter(i + 1)].width = max_length
+                # Ép toàn bộ dữ liệu cột đó sang string rồi mới tìm giá trị dài nhất
+                # Chỗ này giúp tránh lỗi 'float' has no len() khi ô bị trống
+                max_length = 0
+                column = df[col].astype(str) # Ép kiểu ở đây
+                for value in column:
+                    if len(value) > max_length:
+                        max_length = len(value)
+                
+                adjusted_width = max(max_length, len(headers[i])) + 4
+                ws.column_dimensions[get_column_letter(i + 1)].width = adjusted_width
 
-            # 6. Lưu workbook vào buffer
+            # 6. Lưu workbook
             wb.save(buffer)
             
             st.download_button(
@@ -153,6 +158,7 @@ if df is not None:
             df.to_excel(FILE_LOP, index=False)
             st.warning("Đã reset dữ liệu. Hãy F5 lại app.")
             st.rerun()
+
 
 
 
