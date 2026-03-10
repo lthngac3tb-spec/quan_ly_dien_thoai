@@ -62,4 +62,25 @@ with tab2:
         df['GioTra'] = ""
         df.to_excel(FILE_LOP, index=False)
         st.rerun()
+    # --- PHẦN XUẤT FILE EXCEL THEO NGÀY ---
+    st.divider()
+    st.subheader("📥 Xuất Báo Cáo")
+    
+    # Lấy ngày hiện tại để đặt tên file
+    ngay_hien_tai = datetime.now(mui_gio_vn).strftime("%d_%m_%Y")
+    ten_file_xuat = f"Bao_Cao_Dien_Thoai_{ngay_hien_tai}.xlsx"
+
+    # Tạo dữ liệu Excel để tải về (dùng thư viện io để tạo file tạm trong bộ nhớ)
+    import io
+    buffer = io.BytesIO()
+    with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
+        df_hien_thi.to_excel(writer, index=False, sheet_name='BaoCao')
+    
+    # Nút bấm tải về
+    st.download_button(
+        label=f"💾 Tải file Excel ngày {ngay_hien_tai}",
+        data=buffer,
+        file_name=ten_file_xuat,
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
 
