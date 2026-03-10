@@ -42,14 +42,21 @@ if df is not None:
             stt_nhan = ma_thu.strip().zfill(2)
             if stt_nhan in df['STT'].values:
                 idx = df.index[df['STT'] == stt_nhan][0]
-                df.at[idx, 'TrangThai'] = "✅ Đã cất"
-                df.at[idx, 'GioCat'] = datetime.now(mui_gio_vn).strftime("%H:%M %d/%m")
-                df.to_excel(FILE_LOP, index=False)
-                st.success(f"✅ Đã thu máy của: {df.at[idx, 'HoTen']}")
+                trang_thai_hien_tai = df.at[idx, 'TrangThai']
+                ten_hs = df.at[idx, 'HoTen']
+
+                # Kiểm tra nếu đã thu rồi
+                if trang_thai_hien_tai == "✅ Đã cất":
+                    st.warning(f"⚠️ Bạn {ten_hs} đã nộp máy từ trước rồi!")
+                else:
+                    df.at[idx, 'TrangThai'] = "✅ Đã cất"
+                    df.at[idx, 'GioCat'] = datetime.now(mui_gio_vn).strftime("%H:%M %d/%m")
+                    df.to_excel(FILE_LOP, index=False)
+                    st.success(f"✅ Đã thu máy của: {ten_hs}")
             else:
                 st.warning(f"❌ Không thấy STT: {stt_nhan}")
 
-    # --- TAB 2: CHUYÊN TRẢ MÁY ---
+    # --- TAB 2: CHUYÊN TRẢ MÁY (CÓ ĐIỀU KIỆN KIỂM TRA) ---
     with tab_tra:
         st.subheader("📤 Trạm Trả Máy (Tan học)")
         with st.form(key='form_tra_may', clear_on_submit=True):
@@ -60,14 +67,24 @@ if df is not None:
             stt_nhan = ma_tra.strip().zfill(2)
             if stt_nhan in df['STT'].values:
                 idx = df.index[df['STT'] == stt_nhan][0]
-                df.at[idx, 'TrangThai'] = "🏠 Đã trả"
-                df.at[idx, 'GioTra'] = datetime.now(mui_gio_vn).strftime("%H:%M %d/%m")
-                df.to_excel(FILE_LOP, index=False)
-                st.info(f"🏠 Đã trả máy cho: {df.at[idx, 'HoTen']}")
+                trang_thai_hien_tai = df.at[idx, 'TrangThai']
+                ten_hs = df.at[idx, 'HoTen']
+
+                # LOGIC QUAN TRỌNG: Nếu chưa nộp thì không cho trả
+                if trang_thai_hien_tai == "Chưa cất" or trang_thai_hien_tai == "":
+                    st.error(f"🚫 Lỗi: Bạn {ten_hs} CHƯA NỘP máy nên không thể trả!")
+                elif trang_thai_hien_tai == "🏠 Đã trả":
+                    st.warning(f"⚠️ Bạn {ten_hs} đã nhận lại máy rồi!")
+                else:
+                    # Chỉ trả khi trạng thái là "✅ Đã cất"
+                    df.at[idx, 'TrangThai'] = "🏠 Đã trả"
+                    df.at[idx, 'GioTra'] = datetime.now(mui_gio_vn).strftime("%H:%M %d/%m")
+                    df.to_excel(FILE_LOP, index=False)
+                    st.info(f"🏠 Đã trả máy cho: {ten_hs}")
             else:
                 st.warning(f"❌ Không thấy STT: {stt_nhan}")
 
-    # --- TAB 3: DANH SÁCH & XUẤT FILE ---
+    # --- TAB 3: DANH SÁCH & BÁO CÁO ---
     with tab_bc:
         col1, col2 = st.columns(2)
         da_cat = len(df[df['TrangThai'] == "✅ Đã cất"])
@@ -77,7 +94,7 @@ if df is not None:
         st.divider()
         st.dataframe(df, use_container_width=True)
 
-        # XUẤT FILE EXCEL "SIÊU LỲ" CỦA THẦY TRÒ MÌNH
+        # PHẦN XUẤT FILE EXCEL
         try:
             from openpyxl.styles import Alignment, Border, Side, Font, PatternFill
             from openpyxl.utils import get_column_letter
@@ -96,7 +113,6 @@ if df is not None:
                     row_data = [str(x) if str(x) != 'nan' else "" for x in r]
                     ws.append(row_data)
 
-                # Định dạng (giống bản cũ em đã khen "nét")
                 blue_fill = PatternFill(start_color="B8CCE4", end_color="B8CCE4", fill_type="solid")
                 for col_num in range(1, len(headers) + 1):
                     cell = ws.cell(row=1, column=col_num)
@@ -108,6 +124,10 @@ if df is not None:
                 for i, width in enumerate(column_widths):
                     ws.column_dimensions[get_column_letter(i + 1)].width = width
 
+                for row in ws.iter_rows(min_row=2, max_row=ws.max_row):
+                    for cell in row:
+                        cell.border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
+
                 wb.save(buffer)
                 st.download_button(
                     label="💾 Tải file Excel báo cáo",
@@ -118,7 +138,8 @@ if df is not None:
         except Exception as e:
             st.error(f"Lỗi: {e}")
 
-        if st.button("🔄 Reset cho ngày mới"):
+        st.write("---")
+        if st.button("🔄 Reset dữ liệu ngày mới"):
             df['TrangThai'] = "Chưa cất"
             df['GioCat'] = ""
             df['GioTra'] = ""
