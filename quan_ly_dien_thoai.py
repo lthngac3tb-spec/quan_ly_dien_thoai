@@ -80,20 +80,57 @@ if df is not None:
         st.dataframe(df, use_container_width=True)
 
         # PHẦN XUẤT FILE EXCEL
+       # --- PHẦN XUẤT FILE EXCEL CÓ ĐỊNH DẠNG ĐẸP ---
         st.write("---")
         try:
+            from openpyxl.styles import Alignment, Border, Side, Font, PatternFill
+            from openpyxl.utils import get_column_letter
+
             ngay_hien_tai = datetime.now(mui_gio_vn).strftime("%d_%m_%Y")
             buffer = io.BytesIO()
-            # Dùng ExcelWriter với sheet_name cụ thể để tránh lỗi IndexError
-            with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
-                df.to_excel(writer, index=False, sheet_name='BaoCaoNgay')
             
+            with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
+                df.to_excel(writer, index=False, sheet_name='BaoCao')
+                
+                # Lấy sheet vừa tạo để định dạng
+                workbook = writer.book
+                worksheet = writer.sheets['BaoCao']
+
+                # 1. Định dạng Header (Hàng tiêu đề)
+                header_fill = PatternFill(start_color="CCE5FF", end_color="CCE5FF", fill_type="solid")
+                header_font = Font(bold=True, color="000000")
+                thin_border = Border(left=Side(style='thin'), right=Side(style='thin'), 
+                                    top=Side(style='thin'), bottom=Side(style='thin'))
+
+                for col_num, value in enumerate(df.columns.values):
+                    cell = worksheet.cell(row=1, column=col_num + 1)
+                    cell.fill = header_fill
+                    cell.font = header_font
+                    cell.alignment = Alignment(horizontal='center')
+                    cell.border = thin_border
+
+                # 2. Định dạng dữ liệu (Kẻ bảng và căn lề)
+                for row_num in range(2, len(df) + 2):
+                    for col_num in range(1, len(df.columns) + 1):
+                        cell = worksheet.cell(row=row_num, column=col_num)
+                        cell.border = thin_border
+                        # Căn giữa các cột trừ cột Họ Tên
+                        if col_num != 2: 
+                            cell.alignment = Alignment(horizontal='center')
+
+                # 3. Tự động chỉnh độ rộng cột
+                for i, col in enumerate(df.columns):
+                    column_len = max(df[col].astype(str).map(len).max(), len(col)) + 5
+                    worksheet.column_dimensions[get_column_letter(i + 1)].width = column_len
+
             st.download_button(
-                label=f"💾 Tải file Excel ngày {ngay_hien_tai}",
+                label=f"💾 Tải báo cáo Excel (Đã định dạng)",
                 data=buffer.getvalue(),
-                file_name=f"Bao_Cao_Lop_{ngay_hien_tai}.xlsx",
+                file_name=f"Bao_Cao_Dep_Lop_{ngay_hien_tai}.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
+        except Exception as e:
+            st.error(f"Lỗi tạo file: {e}")
         except Exception as e:
             st.error(f"Lỗi tạo file tải về: {e}")
 
@@ -106,5 +143,6 @@ if df is not None:
             df.to_excel(FILE_LOP, index=False)
             st.warning("Đã reset dữ liệu. Hãy F5 lại app.")
             st.rerun()
+
 
 
