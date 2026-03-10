@@ -80,7 +80,7 @@ if df is not None:
         st.dataframe(df, use_container_width=True)
 
         # PHẦN XUẤT FILE EXCEL
-    # --- PHẦN XUẤT FILE EXCEL AN TOÀN & ĐẸP (VÁ LỖI FLOAT) ---
+   # --- PHẦN XUẤT FILE EXCEL "SIÊU LỲ" - KHÔNG THỂ LỖI ---
         st.write("---")
         try:
             from openpyxl.styles import Alignment, Border, Side, Font, PatternFill
@@ -94,60 +94,53 @@ if df is not None:
             ws = wb.active
             ws.title = "BaoCao"
 
-            # 1. Ghi hàng tiêu đề
+            # 1. Ghi tiêu đề và dữ liệu (Ép tất cả về String để chống lỗi len)
             headers = list(df.columns)
             ws.append(headers)
-
-            # 2. Ghi dữ liệu từ DataFrame
             for r in df.values.tolist():
-                ws.append(r)
+                # Chuyển mọi giá trị thành chuỗi, ô trống thành ""
+                row_data = [str(x) if str(x) != 'nan' else "" for x in r]
+                ws.append(row_data)
 
-            # 3. Định dạng Header
-            header_fill = PatternFill(start_color="B8CCE4", end_color="B8CCE4", fill_type="solid")
-            header_font = Font(bold=True)
+            # 2. Định dạng Header
+            blue_fill = PatternFill(start_color="B8CCE4", end_color="B8CCE4", fill_type="solid")
+            bold_font = Font(bold=True)
             thin_border = Border(left=Side(style='thin'), right=Side(style='thin'), 
                                 top=Side(style='thin'), bottom=Side(style='thin'))
 
             for col_num in range(1, len(headers) + 1):
                 cell = ws.cell(row=1, column=col_num)
-                cell.fill = header_fill
-                cell.font = header_font
+                cell.fill = blue_fill
+                cell.font = bold_font
                 cell.alignment = Alignment(horizontal='center', vertical='center')
                 cell.border = thin_border
 
-            # 4. Định dạng hàng dữ liệu
-            for row in ws.iter_rows(min_row=2, max_row=ws.max_row, min_col=1, max_col=len(headers)):
+            # 3. Định dạng hàng dữ liệu & Ép độ rộng cột
+            # Cột 1: STT, Cột 2: Họ Tên, Cột 3: Trạng thái, Cột 4: Giờ cất, Cột 5: Giờ trả
+            column_widths = [10, 25, 15, 15, 15] # Độ rộng cố định cho từng cột
+            
+            for i, width in enumerate(column_widths):
+                ws.column_dimensions[get_column_letter(i + 1)].width = width
+
+            for row in ws.iter_rows(min_row=2, max_row=ws.max_row):
                 for cell in row:
                     cell.border = thin_border
-                    if cell.column != 2:
-                        cell.alignment = Alignment(horizontal='center', vertical='center')
-                    else:
+                    cell.alignment = Alignment(horizontal='center', vertical='center')
+                    # Riêng cột Họ Tên (cột 2) thì căn trái cho dễ đọc
+                    if cell.column == 2:
                         cell.alignment = Alignment(horizontal='left', vertical='center')
 
-            # 5. Tự động chỉnh độ rộng cột (ĐÃ SỬA LỖI FLOAT)
-            for i, col in enumerate(headers):
-                # Ép toàn bộ dữ liệu cột đó sang string rồi mới tìm giá trị dài nhất
-                # Chỗ này giúp tránh lỗi 'float' has no len() khi ô bị trống
-                max_length = 0
-                column = df[col].astype(str) # Ép kiểu ở đây
-                for value in column:
-                    if len(value) > max_length:
-                        max_length = len(value)
-                
-                adjusted_width = max(max_length, len(headers[i])) + 4
-                ws.column_dimensions[get_column_letter(i + 1)].width = adjusted_width
-
-            # 6. Lưu workbook
+            # 4. Lưu workbook
             wb.save(buffer)
             
             st.download_button(
-                label=f"💾 Tải báo cáo Excel xịn ({ngay_hien_tai})",
+                label=f"💾 Tải báo cáo Excel (Bản chuẩn {ngay_hien_tai})",
                 data=buffer.getvalue(),
                 file_name=f"Bao_Cao_Lop_{ngay_hien_tai}.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
         except Exception as e:
-            st.error(f"Lỗi hệ thống khi tạo file: {e}")
+            st.error(f"Lỗi hệ thống: {e}. Hãy báo lại để thầy sửa ngay!")
 
         # NÚT RESET NGÀY MỚI
         st.write("---")
@@ -158,6 +151,7 @@ if df is not None:
             df.to_excel(FILE_LOP, index=False)
             st.warning("Đã reset dữ liệu. Hãy F5 lại app.")
             st.rerun()
+
 
 
 
