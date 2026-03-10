@@ -62,7 +62,7 @@ if df is not None:
                 
                 # Lưu lại file Excel
                 df.to_excel(FILE_LOP, index=False)
-                st.balloons()
+              
             else:
                 st.warning(f"Không tìm thấy học sinh số: {stt_nhan}")
 
@@ -106,4 +106,5 @@ if df is not None:
             df.to_excel(FILE_LOP, index=False)
             st.warning("Đã reset dữ liệu. Hãy F5 lại app.")
             st.rerun()
+
 
