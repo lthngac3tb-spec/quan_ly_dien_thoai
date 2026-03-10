@@ -2,6 +2,8 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 import os
+import os
+os.system("pip install openpyxl")
 
 # --- CẤU HÌNH BAN ĐẦU ---
 FILE_LOP = "danh_sach_lop.xlsx"
@@ -66,5 +68,6 @@ with tab2:
         df_hien_thi['GioTra'] = ""
         df_hien_thi.to_excel(FILE_LOP, index=False)
         st.rerun()
+
 
 
