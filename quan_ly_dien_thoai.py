@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
+import pytz
 import os
 import os
 os.system("pip install openpyxl")
@@ -41,7 +42,10 @@ with tab1:
         if ma_quet in df['STT'].values:
             idx = df.index[df['STT'] == ma_quet][0]
             ten_hs = df.at[idx, 'HoTen']
-            now = datetime.now().strftime("%H:%M %d/%m")
+            # Thiết lập múi giờ Việt Nam
+            mui_gio_vn = pytz.timezone('Asia/Ho_Chi_Minh')
+            bay_gio = datetime.now(mui_gio_vn) 
+            now = bay_gio.strftime("%H:%M %d/%m")
 
             # CHỖ SỬA QUAN TRỌNG: Ép kiểu dữ liệu cột thành Object (Chuỗi) trước khi gán
             df['TrangThai'] = df['TrangThai'].astype(str)
@@ -86,6 +90,7 @@ with tab2:
         df_hien_thi['GioTra'] = ""
         df_hien_thi.to_excel(FILE_LOP, index=False)
         st.rerun()
+
 
 
 
