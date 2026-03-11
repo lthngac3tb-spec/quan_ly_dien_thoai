@@ -129,7 +129,61 @@ if df is not None:
                     ws.column_dimensions[get_column_letter(i + 1)].width = width
 
                 wb.save(buffer)
-                st.download_button(label="💾 Tải file Excel báo cáo", data=buffer.getvalue(), file_name=f"Bao_Cao_{ngay_hien_tai}.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                # --- 3. QUẢN LÝ DỮ LIỆU & XUẤT FILE ĐẸP ---
+        st.subheader("💾 Công cụ quản lý")
+        
+        # Tạo tên file có kèm ngày hiện tại
+        ngay_hien_tai = datetime.now().strftime("%d-%m-%Y")
+        ten_file_xuat = f"Danh_sach_khach_{ngay_hien_tai}.xlsx"
+        
+        # --- LOGIC TẠO FILE EXCEL ĐỊNH DẠNG ĐẸP ---
+        buffer = BytesIO()
+        with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
+            # Xuất dữ liệu ra sheet
+            df.to_excel(writer, index=False, sheet_name='DanhSachKhach')
+            
+            workbook  = writer.book
+            worksheet = writer.sheets['DanhSachKhach']
+
+            # 1. Định dạng tiêu đề (Header): Màu nền xanh, chữ trắng, in đậm, căn giữa, kẻ bảng
+            header_format = workbook.add_format({
+                'bold': True,
+                'text_wrap': True,
+                'valign': 'vcenter',
+                'align': 'center',
+                'fg_color': '#D7E4BC',
+                'border': 1
+            })
+
+            # 2. Định dạng nội dung (Data): Kẻ bảng, căn giữa vcenter
+            cell_format = workbook.add_format({
+                'border': 1,
+                'valign': 'vcenter'
+            })
+
+            # Ghi đè tiêu đề với định dạng mới
+            for col_num, value in enumerate(df.columns.values):
+                worksheet.write(0, col_num, value, header_format)
+            
+            # Ghi định dạng cho toàn bộ các ô dữ liệu
+            for row_num in range(1, len(df) + 1):
+                for col_num in range(len(df.columns)):
+                    # Lấy dữ liệu hiện tại để ghi lại với format
+                    val = df.iloc[row_num-1, col_num] if row_num <= len(df) else ""
+                    worksheet.write(row_num, col_num, val, cell_format)
+
+            # 3. Tự động chỉnh độ rộng cột cho vừa nội dung
+            for i, col in enumerate(df.columns):
+                column_len = max(df[col].astype(str).str.len().max(), len(col)) + 2
+                worksheet.set_column(i, i, column_len)
+
+        # Nút tải file
+        st.download_button(
+            label="📥 Tải File Excel Báo Cáo (Đã kẻ bảng)",
+            data=buffer.getvalue(),
+            file_name=ten_file_xuat,
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
         except Exception as e:
             st.error(f"Lỗi: {e}")
 
@@ -139,3 +193,4 @@ if df is not None:
             df['GioTra'] = ""
             df.to_excel(FILE_LOP, index=False)
             st.rerun()
+
